@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "./api";
-import type { Platform, ProjectInput, Stage } from "./types";
+import type { Platform, ProjectInput, RewardInput, Stage } from "./types";
 import { PLATFORMS, PLATFORM_LABEL, STAGES, STAGE_LABEL } from "./vocab";
 
 export const EMPTY_PROJECT: ProjectInput = {
@@ -14,9 +14,11 @@ export const EMPTY_PROJECT: ProjectInput = {
   tier: null,
   pledge_amount: null,
   currency: "USD",
+  campaign_ended: null,
   original_est: null,
   current_est: null,
   stage: "funded",
+  received_on: null,
   notes: null,
 };
 
@@ -55,12 +57,17 @@ export function ProjectForm({
   submitLabel,
   onSubmit,
   onCancel,
+  askRewards = false,
 }: {
   initial: ProjectInput;
   submitLabel: string;
-  onSubmit: (input: ProjectInput) => Promise<void>;
+  onSubmit: (input: ProjectInput, rewards: RewardInput[]) => Promise<void>;
   onCancel: () => void;
+  /** Show the digital/physical shortcut (new pledges only; existing ones edit rewards in the panel). */
+  askRewards?: boolean;
 }) {
+  const [digital, setDigital] = useState(false);
+  const [physical, setPhysical] = useState(false);
   const [form, setForm] = useState<ProjectInput>(initial);
   const [amount, setAmount] = useState(initial.pledge_amount?.toString() ?? "");
   const [saving, setSaving] = useState(false);
@@ -85,7 +92,10 @@ export function ProjectForm({
         name: form.name.trim(),
         pledge_amount: amount.trim() === "" ? null : Number(amount),
         currency: (form.currency || "USD").toUpperCase(),
-      });
+      }, [
+        ...(digital ? [{ name: "Digital reward", kind: "digital" as const, received_on: null }] : []),
+        ...(physical ? [{ name: "Physical reward", kind: "physical" as const, received_on: null }] : []),
+      ]);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't save. Try again.");
       setSaving(false);
@@ -162,6 +172,19 @@ export function ProjectForm({
         </label>
       </div>
 
+      <label className="field">
+        <span className="field-label">Campaign ended</span>
+        <input
+          type="date"
+          value={form.campaign_ended ?? ""}
+          onChange={(e) => set("campaign_ended", e.target.value || null)}
+          aria-describedby="hint-ended"
+        />
+        <span id="hint-ended" className="hint">
+          The day funding closed. Shown as the start of the pledge's timeline.
+        </span>
+      </label>
+
       <div className="field-row">
         <label className="field">
           <span className="field-label">Promised delivery</span>
@@ -203,6 +226,30 @@ export function ProjectForm({
           ))}
         </select>
       </label>
+
+      {form.stage === "delivered" && (
+        <label className="field">
+          <span className="field-label">Received on</span>
+          <input
+            type="date"
+            value={form.received_on ?? ""}
+            onChange={(e) => set("received_on", e.target.value || null)}
+          />
+        </label>
+      )}
+
+      {askRewards && (
+        <fieldset className="field checks">
+          <legend className="field-label">Rewards included</legend>
+          <label className="check">
+            <input type="checkbox" checked={digital} onChange={(e) => setDigital(e.target.checked)} /> Digital
+          </label>
+          <label className="check">
+            <input type="checkbox" checked={physical} onChange={(e) => setPhysical(e.target.checked)} /> Physical
+          </label>
+          <span className="hint">Tracked separately. Add more items, like add-on waves, from the pledge later.</span>
+        </fieldset>
+      )}
 
       <label className="field">
         <span className="field-label">Reward tier</span>

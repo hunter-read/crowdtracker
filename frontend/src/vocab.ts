@@ -1,4 +1,4 @@
-import type { EventKind, Platform, Stage } from "./types";
+import type { EventKind, Platform, RewardKind, Stage } from "./types";
 
 export const PLATFORMS: Platform[] = [
   "kickstarter",
@@ -26,6 +26,7 @@ export const STAGES: Stage[] = [
   "charged",
   "address_locked",
   "shipping",
+  "partial",
   "delivered",
   "cancelled",
 ];
@@ -38,8 +39,14 @@ export const STAGE_LABEL: Record<Stage, string> = {
   charged: "Charged",
   address_locked: "Address locked",
   shipping: "Shipping",
-  delivered: "Delivered",
+  partial: "Partly received",
+  delivered: "Received",
   cancelled: "Cancelled",
+};
+
+export const REWARD_KIND_LABEL: Record<RewardKind, string> = {
+  digital: "Digital",
+  physical: "Physical",
 };
 
 export const CLOSED: Stage[] = ["delivered", "cancelled"];
@@ -89,6 +96,12 @@ export function money(amount: number, currency: string): string {
   } catch {
     return `${amount} ${currency}`;
   }
+}
+
+/** "2021-08-10" -> UTC timestamp for that day. */
+export function dayToUtc(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  return Date.UTC(y, m - 1, d);
 }
 
 /** Last day of an estimate period, as a UTC timestamp. Mirrors backend/app/periods.py. */

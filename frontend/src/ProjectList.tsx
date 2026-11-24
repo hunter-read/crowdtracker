@@ -1,7 +1,7 @@
 import { Icon } from "./Icon";
 import { AxisHeader, SlipTrack, describeSchedule, type Axis } from "./SlipTrack";
 import type { Platform, Project } from "./types";
-import { PLATFORM_LABEL, STAGE_LABEL } from "./vocab";
+import { PLATFORM_LABEL, REWARD_KIND_LABEL, STAGE_LABEL, formatDay } from "./vocab";
 
 export type SortKey = "estimate" | "name" | "stage";
 export interface Sort {
@@ -88,6 +88,19 @@ export function ProjectList({
                   {p.name}
                 </button>
                 <span className="sub">{[p.category, p.creator].filter(Boolean).join(" · ") || "Uncategorised"}</span>
+                {p.rewards.length > 0 && (
+                  <span className="sub reward-summary">
+                    {(["digital", "physical"] as const)
+                      .filter((k) => p.rewards.some((r) => r.kind === k))
+                      .map((k) => REWARD_KIND_LABEL[k])
+                      .join(" + ")}
+                    {" · "}
+                    <span className="num">
+                      {p.rewards_received}/{p.rewards.length}
+                    </span>{" "}
+                    in
+                  </span>
+                )}
               </th>
               <td className="cell-platform">
                 <PlatformChip platform={p.funded_on} />
@@ -100,8 +113,14 @@ export function ProjectList({
                 {p.needs_action && <span className="sub sub-action">Waiting on you</span>}
               </td>
               <td className="cell-estimate">
-                <span className="num">{p.current_est_label ?? p.original_est_label ?? "None"}</span>
-                {p.current_est_label && p.original_est_label && p.current_est !== p.original_est && (
+                <span className="num">
+                  {p.stage === "delivered" && p.received_on
+                    ? formatDay(p.received_on)
+                    : (p.current_est_label ?? p.original_est_label ?? "None")}
+                </span>
+                {p.stage === "delivered" && p.received_on && p.original_est_label ? (
+                  <span className="sub num">promised {p.original_est_label}</span>
+                ) : p.current_est_label && p.original_est_label && p.current_est !== p.original_est && (
                   <span className="sub num">was {p.original_est_label}</span>
                 )}
               </td>

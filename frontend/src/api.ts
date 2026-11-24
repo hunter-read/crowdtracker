@@ -1,4 +1,4 @@
-import type { EventInput, Project, ProjectDetail, ProjectInput, TimelineEvent } from "./types";
+import type { EventInput, Project, ProjectDetail, ProjectInput, RewardInput, TimelineEvent } from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -43,7 +43,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   listProjects: () => request<Project[]>("/projects"),
   getProject: (id: number) => request<ProjectDetail>(`/projects/${id}`),
-  createProject: (input: ProjectInput) =>
+  createProject: (input: ProjectInput & { rewards?: RewardInput[] }) =>
     request<ProjectDetail>("/projects", { method: "POST", body: JSON.stringify(input) }),
   updateProject: (id: number, changes: Partial<ProjectInput>) =>
     request<ProjectDetail>(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
@@ -51,4 +51,9 @@ export const api = {
   addEvent: (id: number, input: EventInput) =>
     request<TimelineEvent>(`/projects/${id}/events`, { method: "POST", body: JSON.stringify(input) }),
   deleteEvent: (id: number) => request<void>(`/events/${id}`, { method: "DELETE" }),
+  addReward: (projectId: number, input: RewardInput) =>
+    request<ProjectDetail>(`/projects/${projectId}/rewards`, { method: "POST", body: JSON.stringify(input) }),
+  updateReward: (id: number, changes: Partial<RewardInput>) =>
+    request<ProjectDetail>(`/rewards/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
+  deleteReward: (id: number) => request<ProjectDetail>(`/rewards/${id}`, { method: "DELETE" }),
 };

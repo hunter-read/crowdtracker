@@ -1,5 +1,5 @@
 import type { Project } from "./types";
-import { CLOSED, months, periodEnd } from "./vocab";
+import { CLOSED, dayToUtc, months, periodEnd } from "./vocab";
 
 export interface Axis {
   min: number;
@@ -14,7 +14,9 @@ const DAY = 86_400_000;
 export function buildAxis(projects: Project[], today: number): Axis {
   const points = [today];
   for (const p of projects) {
+    if (p.campaign_ended) points.push(dayToUtc(p.campaign_ended));
     if (p.original_est) points.push(periodEnd(p.original_est));
+    if (p.received_on) points.push(dayToUtc(p.received_on));
     if (p.current_est) points.push(periodEnd(p.current_est));
   }
   const pad = 75 * DAY;
@@ -34,8 +36,16 @@ export function axisPos(axis: Axis, t: number): string {
 }
 
 export function describeSchedule(p: Project): { text: string; tone: "late" | "slip" | "ok" | "muted" } {
-  if (p.stage === "delivered") return { text: "Delivered", tone: "ok" };
+  if (p.stage === "delivered") {
+    if (p.months_late === null) return { text: "Received", tone: "ok" };
+    if (p.months_late === 0) return { text: "Received on time", tone: "ok" };
+    return { text: `Received ${months(p.months_late)} late`, tone: "slip" };
+  }
   if (p.stage === "cancelled") return { text: "Cancelled", tone: "muted" };
+  const total = p.rewards.length;
+  const partly = total > 0 && p.rewards_received > 0 ? ` · ${p.rewards_received} of ${total} in` : "";
+  if (p.overdue) return { text: `${months(p.months_overdue)} overdue${partly}`, tone: "late" };
+  if (partly) return { text: `${p.rewards_received} of ${total} received`, tone: "slip" };
   if (p.overdue) return { text: `${months(p.months_overdue)} overdue`, tone: "late" };
   if (p.slip_months && p.slip_months > 0) return { text: `Slipped ${months(p.slip_months)}`, tone: "slip" };
   if (!p.effective_est) return { text: "No date yet", tone: "muted" };
@@ -61,14 +71,23 @@ export function AxisHeader({ axis }: { axis: Axis }) {
 }
 
 export function SlipTrack({ project, axis }: { project: Project; axis: Axis }) {
+  const ended = project.campaign_ended ? dayToUtc(project.campaign_ended) : null;
   const original = project.original_est ? periodEnd(project.original_est) : null;
-  const current = project.current_est ? periodEnd(project.current_est) : null;
+  const received = project.stage === "delivered" && project.received_on ? dayToUtc(project.received_on) : null;
+  // Once it has arrived, the arrival date is the end of the story.
+  const current = received ?? (project.current_est ? periodEnd(project.current_est) : null);
   const effective = current ?? original;
   const closed = CLOSED.includes(project.stage);
 
+  // The wait the backer signed up for: campaign end to the first promised date
+  // (or to the current estimate when there is no promised one).
+  const promisedEnd = original ?? current;
+
   const parts: string[] = [];
+  if (project.campaign_ended) parts.push(`campaign ended ${project.campaign_ended}`);
   if (project.original_est_label) parts.push(`promised ${project.original_est_label}`);
-  if (project.current_est_label) parts.push(`now expected ${project.current_est_label}`);
+  if (received !== null) parts.push(`received ${project.received_on}`);
+  else if (project.current_est_label) parts.push(`now expected ${project.current_est_label}`);
   parts.push(describeSchedule(project).text.toLowerCase());
 
   return (
@@ -77,6 +96,12 @@ export function SlipTrack({ project, axis }: { project: Project; axis: Axis }) {
         <span key={y.label} className="track-grid" style={{ left: axisPos(axis, y.at) }} />
       ))}
       <span className="track-line" />
+      {ended !== null && promisedEnd !== null && promisedEnd > ended && (
+        <span
+          className="track-seg track-seg-wait"
+          style={{ left: axisPos(axis, ended), right: `calc(100% - ${axisPos(axis, promisedEnd)})` }}
+        />
+      )}
       {original !== null && current !== null && current > original && (
         <span
           className="track-seg track-seg-slip"
@@ -90,12 +115,13 @@ export function SlipTrack({ project, axis }: { project: Project; axis: Axis }) {
         />
       )}
       <span className="track-today" style={{ left: axisPos(axis, axis.today) }} />
+      {ended !== null && <span className="track-tick" style={{ left: axisPos(axis, ended) }} />}
       {original !== null && current !== null && (
         <span className="track-dot track-dot-promised" style={{ left: axisPos(axis, original) }} />
       )}
       {effective !== null && (
         <span
-          className={`track-dot track-dot-now platform-${project.funded_on}`}
+          className={`track-dot ${received !== null ? "track-dot-received" : "track-dot-now"} platform-${project.funded_on}`}
           style={{ left: axisPos(axis, effective) }}
         />
       )}

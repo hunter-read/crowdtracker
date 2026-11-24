@@ -46,7 +46,30 @@ def init_db(url: str | None = None) -> Engine:
     engine = make_engine(url)
     SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
     Base.metadata.create_all(engine)
+    _add_missing_columns(engine)
     return engine
+
+
+def _add_missing_columns(engine: Engine) -> None:
+    """Add columns introduced after a database was first created.
+
+    create_all() only creates missing tables, so a column added to a model
+    later has to be added to existing databases here. Only nullable columns
+    with no default are added this way.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not inspector.has_table(table.name):
+                continue
+            existing = {c["name"] for c in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                ddl_type = column.type.compile(dialect=engine.dialect)
+                conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {ddl_type}'))
 
 
 def get_session() -> Iterator[Session]:

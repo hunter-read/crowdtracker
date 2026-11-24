@@ -17,8 +17,12 @@ FastAPI + SQLite backend, React front end, one container.
   (Kickstarter, BackerKit, Gamefound, PledgeManager, Indiegogo, other).
 - Keeps the **promised** date and the **latest estimate** apart, so slips are
   measured instead of overwritten.
+- Records when the campaign ended, so each pledge's timeline starts there.
 - Flags pledges that are past their latest estimate and pledges with a survey
   waiting on you.
+- Tracks reward items (digital or physical) that arrive separately or in
+  stages. Receiving some moves a pledge to **Partly received**; receiving all
+  of them moves it to **Received** and records how late it was.
 - Keeps a timeline per pledge. Creator updates, surveys, charges and shipping
   notices are logged by hand; estimate and stage changes are logged for you.
 - Works on a phone and follows the system light/dark setting.
@@ -103,20 +107,26 @@ Write your own file in that shape, then either:
 
 Any other `*.json` under `backend/seed/` is git-ignored.
 
+Upgrading keeps your data: new columns and tables are added to an existing
+database at startup.
+
 ## API
 
 Interactive docs at `/docs`.
 
 | Method | Path                         |                                                   |
 | ------ | ---------------------------- | ------------------------------------------------- |
-| GET    | `/api/projects?view=`        | `all`, `open`, `overdue`, `action`, `closed`      |
+| GET    | `/api/projects?view=`        | `all`, `open`, `overdue`, `action`, `partial`, `received`, `cancelled` |
 | POST   | `/api/projects`              |                                                   |
 | GET    | `/api/projects/{id}`         | includes the timeline                             |
 | PATCH  | `/api/projects/{id}`         | partial; logs estimate and stage changes          |
 | DELETE | `/api/projects/{id}`         |                                                   |
 | POST   | `/api/projects/{id}/events`  |                                                   |
 | DELETE | `/api/events/{id}`           |                                                   |
-| POST   | `/api/import`                | JSON list of projects                             |
+| POST   | `/api/import`                | JSON list of projects (may include `rewards`)     |
+| POST   | `/api/projects/{id}/rewards` | add a reward item                                 |
+| PATCH  | `/api/rewards/{id}`          | e.g. `{"received_on": "2026-11-24"}`              |
+| DELETE | `/api/rewards/{id}`          |                                                   |
 | GET    | `/api/summary`               | counts, handy for a dashboard widget              |
 | GET    | `/api/health`                |                                                   |
 

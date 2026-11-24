@@ -8,13 +8,16 @@ import { buildAxis } from "./SlipTrack";
 import type { Platform, Project } from "./types";
 import { CLOSED, PLATFORMS, PLATFORM_LABEL, STAGES } from "./vocab";
 
-type View = "open" | "overdue" | "action" | "closed" | "all";
+
+type View = "open" | "overdue" | "action" | "partial" | "received" | "cancelled" | "all";
 
 const VIEWS: { id: View; label: string }[] = [
   { id: "open", label: "Open" },
   { id: "overdue", label: "Overdue" },
   { id: "action", label: "Needs you" },
-  { id: "closed", label: "Closed" },
+  { id: "partial", label: "Partly received" },
+  { id: "received", label: "Received" },
+  { id: "cancelled", label: "Cancelled" },
   { id: "all", label: "All" },
 ];
 
@@ -26,8 +29,12 @@ const inView = (p: Project, view: View): boolean => {
       return p.overdue;
     case "action":
       return p.needs_action;
-    case "closed":
-      return CLOSED.includes(p.stage);
+    case "partial":
+      return p.stage === "partial";
+    case "received":
+      return p.stage === "delivered";
+    case "cancelled":
+      return p.stage === "cancelled";
     default:
       return true;
   }
@@ -37,7 +44,9 @@ const EMPTY_VIEW: Record<View, string> = {
   open: "No open pledges. Everything you've backed has been delivered or cancelled.",
   overdue: "Nothing is overdue. Every open pledge is still inside its latest estimate.",
   action: "Nothing is waiting on you. Pledges show up here while a survey is open.",
-  closed: "No closed pledges yet. Delivered and cancelled pledges collect here.",
+  received: "Nothing received yet. Open a pledge and choose Mark as received when it arrives.",
+  cancelled: "No cancelled pledges.",
+  partial: "Nothing is partly received.",
   all: "",
 };
 
@@ -113,8 +122,14 @@ export default function App() {
         return a.effective_est_end.localeCompare(b.effective_est_end) || a.name.localeCompare(b.name);
       },
     };
+    if (view === "received" && sort.key === "estimate") {
+      // Newest arrivals first.
+      return [...rows].sort(
+        (a, b) => (b.received_on ?? "").localeCompare(a.received_on ?? "") || a.name.localeCompare(b.name),
+      );
+    }
     return [...rows].sort((a, b) => cmp[sort.key](a, b) * sort.dir);
-  }, [viewed, platform, sort]);
+  }, [viewed, platform, sort, view]);
 
   useEffect(() => {
     if (platform && !spectrum.some((s) => s.id === platform)) setPlatform(null);
@@ -143,7 +158,7 @@ export default function App() {
           <h1 className="visually-hidden">Pledges</h1>
 
           <nav className="views" aria-label="Views">
-            {VIEWS.map((v) => (
+            {VIEWS.filter((v) => !(v.id === "cancelled" || v.id === "partial") || counts[v.id] > 0 || view === v.id).map((v) => (
               <button
                 key={v.id}
                 type="button"
@@ -232,6 +247,12 @@ export default function App() {
               />
               <p className="legend" aria-hidden="true">
                 <span className="legend-item">
+                  <span className="track-tick legend-tick" /> Campaign ended
+                </span>
+                <span className="legend-item">
+                  <span className="legend-swatch track-seg-wait" /> Expected wait
+                </span>
+                <span className="legend-item">
                   <span className="track-dot track-dot-promised legend-dot" /> Promised
                 </span>
                 <span className="legend-item">
@@ -257,8 +278,9 @@ export default function App() {
                   initial={EMPTY_PROJECT}
                   submitLabel="Add pledge"
                   onCancel={() => setPanel({ mode: "none" })}
-                  onSubmit={async (input) => {
-                    const created = await api.createProject(input);
+                  askRewards
+                  onSubmit={async (input, rewards) => {
+                    const created = await api.createProject({ ...input, rewards });
                     await refresh();
                     setView("all");
                     setPlatform(null);

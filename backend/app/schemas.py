@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
-from .models import EVENT_KINDS, PLATFORMS, STAGES
+from .models import EVENT_KINDS, PLATFORMS, REWARD_KINDS, STAGES
 from .periods import validate_period
 
 
@@ -32,6 +32,43 @@ Platform = Annotated[str | None, AfterValidator(_platform)]
 Url = Annotated[str | None, AfterValidator(_url)]
 
 
+class RewardBase(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    kind: str = "physical"
+    received_on: date | None = None
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, v: str) -> str:
+        if v not in REWARD_KINDS:
+            raise ValueError(f"kind must be one of {REWARD_KINDS}")
+        return v
+
+
+class RewardCreate(RewardBase):
+    pass
+
+
+class RewardUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    kind: str | None = None
+    received_on: date | None = None
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, v: str | None) -> str | None:
+        if v is not None and v not in REWARD_KINDS:
+            raise ValueError(f"kind must be one of {REWARD_KINDS}")
+        return v
+
+
+class RewardOut(RewardBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int
+
+
 class ProjectBase(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     category: str | None = Field(default=None, max_length=60)
@@ -43,9 +80,11 @@ class ProjectBase(BaseModel):
     tier: str | None = Field(default=None, max_length=200)
     pledge_amount: float | None = Field(default=None, ge=0)
     currency: str = Field(default="USD", min_length=3, max_length=3)
+    campaign_ended: date | None = None
     original_est: Period = None
     current_est: Period = None
     stage: str = "funded"
+    received_on: date | None = None
     notes: str | None = None
 
     @field_validator("funded_on")
@@ -69,7 +108,8 @@ class ProjectBase(BaseModel):
 
 
 class ProjectCreate(ProjectBase):
-    pass
+    # Optional reward items to create with the pledge (handy for imports).
+    rewards: list[RewardCreate] = []
 
 
 class ProjectUpdate(BaseModel):
@@ -85,9 +125,11 @@ class ProjectUpdate(BaseModel):
     tier: str | None = Field(default=None, max_length=200)
     pledge_amount: float | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
+    campaign_ended: date | None = None
     original_est: Period = None
     current_est: Period = None
     stage: str | None = None
+    received_on: date | None = None
     notes: str | None = None
 
     @field_validator("funded_on")
@@ -144,6 +186,11 @@ class ProjectOut(ProjectBase):
     # Derived, see routes._decorate
     original_est_label: str | None = None
     current_est_label: str | None = None
+    months_since_campaign: int | None = None
+    # For received pledges: months after the promised date it arrived (0 = on time).
+    months_late: int | None = None
+    rewards: list[RewardOut] = []
+    rewards_received: int = 0
     effective_est: str | None = None
     effective_est_end: date | None = None
     overdue: bool = False
@@ -163,4 +210,6 @@ class Summary(BaseModel):
     open: int
     overdue: int
     needs_action: int
+    partial: int
     delivered: int
+    cancelled: int

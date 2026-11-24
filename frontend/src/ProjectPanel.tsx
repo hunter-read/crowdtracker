@@ -2,10 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ApiError, api } from "./api";
 import { Icon } from "./Icon";
 import { ProjectForm, periodError } from "./ProjectForm";
+import { Rewards } from "./Rewards";
 import { PlatformChip } from "./ProjectList";
 import { describeSchedule } from "./SlipTrack";
 import type { EventKind, ProjectDetail, ProjectInput, Stage } from "./types";
-import { KIND_LABEL, MANUAL_KINDS, PLATFORM_LABEL, STAGES, STAGE_LABEL, formatDay, money } from "./vocab";
+import { KIND_LABEL, MANUAL_KINDS, PLATFORM_LABEL, STAGES, STAGE_LABEL, formatDay, money, months } from "./vocab";
 
 function toInput(p: ProjectDetail): ProjectInput {
   return {
@@ -19,9 +20,11 @@ function toInput(p: ProjectDetail): ProjectInput {
     tier: p.tier,
     pledge_amount: p.pledge_amount,
     currency: p.currency,
+    campaign_ended: p.campaign_ended,
     original_est: p.original_est,
     current_est: p.current_est,
     stage: p.stage,
+    received_on: p.received_on,
     notes: p.notes,
   };
 }
@@ -196,6 +199,36 @@ export function ProjectPanel({
 
       <section className="panel-section" aria-labelledby="status-heading">
         <h3 id="status-heading">Status</h3>
+        {project.stage === "delivered" ? (
+          <div className="received">
+            <p>
+              <strong>Received{project.received_on ? ` ${formatDay(project.received_on)}` : ""}</strong>
+              {project.received_on && (
+                <span className="hint"> {describeSchedule(project).text.replace(/^Received ?/, "") || ""}</span>
+              )}
+            </p>
+            <label className="field">
+              <span className="field-label">Received on</span>
+              <input
+                type="date"
+                value={project.received_on ?? ""}
+                disabled={busy}
+                onChange={(e) => e.target.value && void patch({ received_on: e.target.value })}
+              />
+            </label>
+          </div>
+        ) : (
+          project.stage !== "cancelled" && (
+            <button
+              type="button"
+              className="btn btn-primary btn-received"
+              disabled={busy}
+              onClick={() => void patch({ stage: "delivered" })}
+            >
+              <Icon name="check" /> {project.rewards.length > 0 ? "Mark everything received" : "Mark as received"}
+            </button>
+          )
+        )}
         <label className="field">
           <span className="field-label">Stage</span>
           <select
@@ -210,6 +243,7 @@ export function ProjectPanel({
             ))}
           </select>
         </label>
+        {project.stage !== "delivered" && (
         <form className="field" onSubmit={saveEstimate}>
           <label className="field-label" htmlFor="quick-estimate">
             Now expected
@@ -235,13 +269,39 @@ export function ProjectPanel({
                 : "Each change is logged below.")}
           </span>
         </form>
+        )}
       </section>
+
+      <Rewards
+        project={project}
+        busy={busy}
+        run={run}
+        onUpdated={(updated) => {
+          setProject(updated);
+          onChanged();
+        }}
+      />
 
       <section className="panel-section" aria-labelledby="pledge-heading">
         <h3 id="pledge-heading">Pledge</h3>
         <dl className="facts">
           <dt>Pledged on</dt>
           <dd>{PLATFORM_LABEL[project.funded_on]}</dd>
+          <dt>Campaign ended</dt>
+          <dd className="num">
+            {project.campaign_ended ? (
+              <>
+                {formatDay(project.campaign_ended)}
+                {project.months_since_campaign !== null && project.months_since_campaign > 0 && (
+                  <span className="facts-aside"> · {months(project.months_since_campaign)} ago</span>
+                )}
+              </>
+            ) : (
+              <button type="button" className="link-button" onClick={() => setEditing(true)}>
+                Add date
+              </button>
+            )}
+          </dd>
           <dt>Survey on</dt>
           <dd>{project.pledge_manager ? PLATFORM_LABEL[project.pledge_manager] : "Not announced"}</dd>
           {project.tier && (

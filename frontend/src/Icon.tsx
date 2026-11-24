@@ -8,6 +8,7 @@ const PATHS = {
   sortUp: "M7 14l5-5 5 5",
   sortDown: "M7 10l5 5 5-5",
   alert: "M12 4l9 16H3L12 4zM12 10v5M12 17.5v.5",
+  check: "M5 12.5l4.5 4.5L19 7.5",
 } as const;
 
 export type IconName = keyof typeof PATHS;

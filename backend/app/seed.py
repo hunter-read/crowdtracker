@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from . import db
 from .models import Project
+from .routes import _new_project
 from .schemas import ProjectCreate
 
 EXAMPLE_SEED = Path(__file__).resolve().parent.parent / "seed" / "projects.example.json"
@@ -31,7 +32,7 @@ def seed_if_empty(session: Session, path: Path) -> int:
         return 0
     rows = json.loads(path.read_text(encoding="utf-8"))
     for row in rows:
-        session.add(Project(**ProjectCreate(**row).model_dump()))
+        session.add(_new_project(ProjectCreate(**row)))
     session.commit()
     return len(rows)
 

@@ -5,10 +5,22 @@
     "creator": "Example Games",
     "funded_on": "gamefound",
     "pledge_manager": "gamefound",
+    "campaign_ended": "2024-10-17",
     "original_est": "2026-03",
     "current_est": "2027-Q1",
-    "stage": "survey_done",
-    "notes": "Example data. Replace with your own pledges."
+    "stage": "shipping",
+    "notes": "Example data. Replace with your own pledges.",
+    "rewards": [
+      {
+        "name": "Base game",
+        "kind": "physical",
+        "received_on": "2026-11-02"
+      },
+      {
+        "name": "Stretch goals box",
+        "kind": "physical"
+      }
+    ]
   },
   {
     "name": "The Clockwork Atlas",
@@ -16,8 +28,19 @@
     "creator": "Example Press",
     "funded_on": "kickstarter",
     "pledge_manager": "backerkit",
+    "campaign_ended": "2024-05-02",
     "original_est": "2025-11",
-    "stage": "funded"
+    "stage": "funded",
+    "rewards": [
+      {
+        "name": "Core book PDF",
+        "kind": "digital"
+      },
+      {
+        "name": "Hardcover",
+        "kind": "physical"
+      }
+    ]
   },
   {
     "name": "Pocket Synth Mk II",
