@@ -1,0 +1,40 @@
+# crowdtracker has no login of its own. Keep it behind your SSO forward-auth
+# middleware or reachable only over a private network; don't expose it bare.
+#
+# The Traefik labels use common names (network, entrypoint, middleware) that
+# may differ from yours; the lines to check are marked ADJUST.
+
+services:
+  crowdtracker:
+    image: ghcr.io/hunter-read/crowdtracker:latest
+    # To build from source instead, comment out `image` and use:
+    # build:
+    #   context: .
+    #   dockerfile: Containerfile
+    container_name: crowdtracker
+    restart: unless-stopped
+    # environment:
+    #   # Loads this file the first time the database is empty. Put your own
+    #   # JSON in the data volume; see backend/seed/projects.example.json.
+    #   CROWDTRACKER_SEED_FILE: /data/seed.json
+    volumes:
+      # Named volume: ownership works with rootless Podman without extra flags.
+      # For a bind mount use ./data:/data:U instead.
+      - crowdtracker-data:/data
+    networks:
+      - traefik # ADJUST: your Traefik network
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.crowdtracker.rule: Host(`crowdtracker.example.com`) # ADJUST
+      traefik.http.routers.crowdtracker.entrypoints: websecure # ADJUST
+      traefik.http.routers.crowdtracker.tls: "true"
+      # traefik.http.routers.crowdtracker.tls.certresolver: letsencrypt # ADJUST, if you set it per router
+      # traefik.http.routers.crowdtracker.middlewares: forward-auth@file # ADJUST: your auth chain
+      traefik.http.services.crowdtracker.loadbalancer.server.port: "8000"
+
+volumes:
+  crowdtracker-data:
+
+networks:
+  traefik:
+    external: true

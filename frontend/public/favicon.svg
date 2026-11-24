@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="crowdtracker">
+  <title>crowdtracker</title>
+  <rect width="48" height="48" rx="11" fill="#1c1a2b"/>
+  <circle cx="10.5" cy="24" r="4.5" fill="none" stroke="#f5f3ee" stroke-width="2.5"/>
+  <rect x="17.0" y="21" width="3" height="6" rx="1" fill="#05ce78"/>
+  <rect x="20.8" y="21" width="3" height="6" rx="1" fill="#ffd508"/>
+  <rect x="24.6" y="21" width="3" height="6" rx="1" fill="#d6106b"/>
+  <rect x="28.4" y="21" width="3" height="6" rx="1" fill="#5b4bdb"/>
+  <circle cx="38.5" cy="24" r="6.5" fill="#f5f3ee"/>
+</svg>

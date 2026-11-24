@@ -1,0 +1,40 @@
+[
+  {
+    "name": "Lanterns of the Deep",
+    "category": "Board Game",
+    "creator": "Example Games",
+    "funded_on": "gamefound",
+    "pledge_manager": "gamefound",
+    "original_est": "2026-03",
+    "current_est": "2027-Q1",
+    "stage": "survey_done",
+    "notes": "Example data. Replace with your own pledges."
+  },
+  {
+    "name": "The Clockwork Atlas",
+    "category": "TTRPG",
+    "creator": "Example Press",
+    "funded_on": "kickstarter",
+    "pledge_manager": "backerkit",
+    "original_est": "2025-11",
+    "stage": "funded"
+  },
+  {
+    "name": "Pocket Synth Mk II",
+    "category": "Device",
+    "funded_on": "indiegogo",
+    "original_est": "2027-06",
+    "stage": "survey_open",
+    "tier": "Early bird",
+    "pledge_amount": 149,
+    "currency": "USD"
+  },
+  {
+    "name": "Field Notes on Dragons",
+    "category": "Books",
+    "funded_on": "backerkit",
+    "pledge_manager": "backerkit",
+    "original_est": "2028",
+    "stage": "funded"
+  }
+]

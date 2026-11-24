@@ -1,0 +1,17 @@
+node_modules/
+dist/
+backend/static/
+data/
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.venv/
+.env
+
+# Personal pledge data stays out of the repo; only the example seed is tracked.
+backend/seed/*.json
+!backend/seed/projects.example.json
+seed.json

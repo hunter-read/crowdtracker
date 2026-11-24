@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+**/*.egg-info
+data
+*.db
+backend/tests
+README.md
+DESIGN.md
