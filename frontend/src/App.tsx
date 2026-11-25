@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError, api } from "./api";
 import { Icon } from "./Icon";
+import { InboxPanel } from "./InboxPanel";
 import { EMPTY_PROJECT, ProjectForm } from "./ProjectForm";
 import { ListSkeleton, ProjectList, type Sort, type SortKey } from "./ProjectList";
 import { PanelBar, ProjectPanel } from "./ProjectPanel";
 import { buildAxis } from "./SlipTrack";
-import type { Platform, Project } from "./types";
+import type { InboxMessage, Platform, Project, ProjectInput } from "./types";
 import { CLOSED, PLATFORMS, PLATFORM_LABEL, STAGES } from "./vocab";
 
 
@@ -50,7 +51,34 @@ const EMPTY_VIEW: Record<View, string> = {
   all: "",
 };
 
-type PanelState = { mode: "none" } | { mode: "new" } | { mode: "detail"; id: number };
+type PanelState =
+  | { mode: "none" }
+  | { mode: "new"; from?: InboxMessage }
+  | { mode: "detail"; id: number }
+  | { mode: "inbox" };
+
+/** A starting point for a pledge made from an email in the tray. */
+function draftFrom(message: InboxMessage): ProjectInput {
+  // The campaign link's slug is usually the project's name; the subject is the fallback.
+  const slug = message.campaign_url?.replace(/[?#].*$/, "").split("/").filter(Boolean).pop();
+  const fromSlug = slug
+    ? slug
+        .split("-")
+        .slice(0, 8)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    : null;
+  const name = fromSlug ?? message.subject
+    .replace(/^\s*(project )?update\s*#\s*\d+\s*[:\-–]\s*/i, "")
+    .replace(/\s*[-–|]\s*(kickstarter|backerkit|gamefound)\s*$/i, "")
+    .trim();
+  return {
+    ...EMPTY_PROJECT,
+    name,
+    funded_on: message.platform,
+    campaign_url: message.campaign_url,
+  };
+}
 
 export default function App() {
   const [projects, setProjects] = useState<Project[] | null>(null);
@@ -59,10 +87,13 @@ export default function App() {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [sort, setSort] = useState<Sort>({ key: "estimate", dir: 1 });
   const [panel, setPanel] = useState<PanelState>({ mode: "none" });
+  const [unsorted, setUnsorted] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
-      setProjects(await api.listProjects());
+      const [list, mail] = await Promise.all([api.listProjects(), api.mailStatus().catch(() => null)]);
+      setProjects(list);
+      if (mail) setUnsorted(mail.unsorted);
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't load your pledges.");
@@ -148,9 +179,24 @@ export default function App() {
           <img src="/favicon.svg" alt="" width="28" height="28" />
           crowdtracker
         </a>
-        <button type="button" className="btn btn-on-ink" onClick={() => setPanel({ mode: "new" })}>
-          <Icon name="plus" /> Add pledge
-        </button>
+        <div className="topbar-actions">
+          <button
+            type="button"
+            className={panel.mode === "inbox" ? "btn btn-ghost-ink btn-ghost-on" : "btn btn-ghost-ink"}
+            onClick={() => setPanel(panel.mode === "inbox" ? { mode: "none" } : { mode: "inbox" })}
+            aria-pressed={panel.mode === "inbox"}
+          >
+            <Icon name="inbox" /> <span className="btn-label">Email</span>
+            {unsorted > 0 && (
+              <span className="badge num" aria-label={`${unsorted} to sort`}>
+                {unsorted}
+              </span>
+            )}
+          </button>
+          <button type="button" className="btn btn-on-ink" onClick={() => setPanel({ mode: "new" })}>
+            <Icon name="plus" /> <span className="btn-label">Add pledge</span>
+          </button>
+        </div>
       </header>
 
       <div className="layout">
@@ -270,17 +316,40 @@ export default function App() {
         </main>
 
         {panelOpen && (
-          <aside className="panel" aria-label={panel.mode === "new" ? "Add pledge" : "Pledge details"}>
+          <aside
+            className="panel"
+            aria-label={panel.mode === "new" ? "Add pledge" : panel.mode === "inbox" ? "Email" : "Pledge details"}
+          >
+            {panel.mode === "inbox" && (
+              <InboxPanel
+                projects={all}
+                onClose={() => setPanel({ mode: "none" })}
+                onChanged={() => void refresh()}
+                onOpenProject={(id) => setPanel({ mode: "detail", id })}
+                onNewPledge={(message) => setPanel({ mode: "new", from: message })}
+              />
+            )}
             {panel.mode === "new" && (
               <div className="panel-body">
-                <PanelBar title="Add pledge" onClose={() => setPanel({ mode: "none" })} />
+                <PanelBar
+                  title={panel.from ? "New pledge from email" : "Add pledge"}
+                  onClose={() => setPanel(panel.from ? { mode: "inbox" } : { mode: "none" })}
+                />
+                {panel.from && (
+                  <p className="hint">
+                    From “{panel.from.subject}”. Check the name, then save: the email goes onto the new pledge's
+                    timeline.
+                  </p>
+                )}
                 <ProjectForm
-                  initial={EMPTY_PROJECT}
+                  key={panel.from?.id ?? "blank"}
+                  initial={panel.from ? draftFrom(panel.from) : EMPTY_PROJECT}
                   submitLabel="Add pledge"
-                  onCancel={() => setPanel({ mode: "none" })}
+                  onCancel={() => setPanel(panel.from ? { mode: "inbox" } : { mode: "none" })}
                   askRewards
                   onSubmit={async (input, rewards) => {
                     const created = await api.createProject({ ...input, rewards });
+                    if (panel.from) await api.assignMessage(panel.from.id, created.id);
                     await refresh();
                     setView("all");
                     setPlatform(null);

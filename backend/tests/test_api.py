@@ -118,7 +118,8 @@ def test_views_and_sort_order(client):
 
     summary = client.get("/api/summary").json()
     assert summary == {
-        "total": 5, "open": 4, "overdue": 1, "needs_action": 1, "partial": 0, "delivered": 1, "cancelled": 0
+        "total": 5, "open": 4, "overdue": 1, "needs_action": 1, "partial": 0, "delivered": 1, "cancelled": 0,
+        "unsorted": 0,
     }
     assert [p["name"] for p in client.get("/api/projects?view=received").json()] == ["Done"]
     assert client.get("/api/projects?view=cancelled").json() == []

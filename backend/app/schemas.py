@@ -86,6 +86,7 @@ class ProjectBase(BaseModel):
     stage: str = "funded"
     received_on: date | None = None
     notes: str | None = None
+    match_terms: str | None = Field(default=None, max_length=1000)
 
     @field_validator("funded_on")
     @classmethod
@@ -131,6 +132,7 @@ class ProjectUpdate(BaseModel):
     stage: str | None = None
     received_on: date | None = None
     notes: str | None = None
+    match_terms: str | None = Field(default=None, max_length=1000)
 
     @field_validator("funded_on")
     @classmethod
@@ -213,3 +215,4 @@ class Summary(BaseModel):
     partial: int
     delivered: int
     cancelled: int
+    unsorted: int = 0

@@ -20,6 +20,7 @@ export const EMPTY_PROJECT: ProjectInput = {
   stage: "funded",
   received_on: null,
   notes: null,
+  match_terms: null,
 };
 
 const PERIOD = /^\d{4}(-Q[1-4]|-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$/i;
@@ -41,6 +42,7 @@ const TEXT_FIELDS = [
   "original_est",
   "current_est",
   "notes",
+  "match_terms",
 ] as const;
 
 function tidy(form: ProjectInput): ProjectInput {
@@ -306,6 +308,22 @@ export function ProjectForm({
       <label className="field">
         <span className="field-label">Notes</span>
         <textarea value={form.notes ?? ""} onChange={(e) => set("notes", blank(e.target.value))} rows={3} />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Also known as in emails</span>
+        <input
+          value={form.match_terms ?? ""}
+          onChange={(e) => set("match_terms", blank(e.target.value))}
+          placeholder="CarlRPG, DCC RPG"
+          maxLength={1000}
+          aria-describedby="match-terms-hint"
+          autoComplete="off"
+        />
+        <span id="match-terms-hint" className="hint">
+          Other names the creator uses, separated by commas. Emails are matched on these, the pledge name and its
+          links.
+        </span>
       </label>
 
       {error && (

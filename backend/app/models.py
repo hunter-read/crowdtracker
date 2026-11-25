@@ -75,6 +75,9 @@ class Project(Base):
     # Day everything arrived. Set automatically when the pledge becomes "delivered".
     received_on: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
+    # Extra words that identify this pledge in emails (comma or newline separated),
+    # e.g. a short name the creator uses. The name and campaign URLs are always tried.
+    match_terms: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
@@ -124,3 +127,46 @@ class Event(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     project: Mapped[Project] = relationship(back_populates="events")
+
+
+INBOX_STATUSES = ["matched", "unsorted", "ignored"]
+
+
+class InboxMessage(Base):
+    """A platform email crowdtracker has read.
+
+    Only mail from crowdfunding platforms is kept, and only an excerpt of it.
+    Matched messages become timeline events; the rest wait in the unsorted tray.
+    """
+
+    __tablename__ = "inbox_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[str] = mapped_column(String(500), unique=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sender: Mapped[str] = mapped_column(String(300))
+    subject: Mapped[str] = mapped_column(String(500))
+    platform: Mapped[str] = mapped_column(String(30))
+    kind: Mapped[str] = mapped_column(String(30))
+    # Stage the email shows the pledge has reached, if it's a personal notice.
+    stage_hint: Mapped[str | None] = mapped_column(String(30))
+    url: Mapped[str | None] = mapped_column(String(500))
+    tracking_url: Mapped[str | None] = mapped_column(String(500))
+    campaign_url: Mapped[str | None] = mapped_column(String(500))
+    excerpt: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="unsorted", index=True)
+    match_reason: Mapped[str | None] = mapped_column(String(300))
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"), index=True)
+    event_id: Mapped[int | None] = mapped_column(ForeignKey("events.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    project: Mapped[Project | None] = relationship()
+
+
+class Setting(Base):
+    """Small key/value store, e.g. the IMAP sync position."""
+
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    value: Mapped[str | None] = mapped_column(Text)

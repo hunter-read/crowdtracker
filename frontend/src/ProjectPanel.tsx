@@ -26,6 +26,7 @@ function toInput(p: ProjectDetail): ProjectInput {
     stage: p.stage,
     received_on: p.received_on,
     notes: p.notes,
+    match_terms: p.match_terms,
   };
 }
 
@@ -382,7 +383,14 @@ export function ProjectPanel({
             {project.events.map((ev) => (
               <li key={ev.id} className={`timeline-item kind-${ev.kind}`}>
                 <div className="timeline-head">
-                  <span className="timeline-kind">{KIND_LABEL[ev.kind]}</span>
+                  <span className="timeline-kind">
+                    {KIND_LABEL[ev.kind]}
+                    {ev.source === "email" && (
+                      <span className="timeline-source">
+                        <Icon name="mail" size={12} /> Email
+                      </span>
+                    )}
+                  </span>
                   <time dateTime={ev.occurred_on} className="num">
                     {formatDay(ev.occurred_on)}
                   </time>
@@ -396,6 +404,7 @@ export function ProjectPanel({
                     ev.title
                   )}
                 </p>
+                {ev.body && <p className="timeline-body">{ev.body}</p>}
                 {ev.source === "manual" && (
                   <button
                     type="button"

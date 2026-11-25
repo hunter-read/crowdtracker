@@ -1,4 +1,15 @@
-import type { EventInput, Project, ProjectDetail, ProjectInput, RewardInput, TimelineEvent } from "./types";
+import type {
+  EventInput,
+  InboxMessage,
+  InboxStatus,
+  MailStatus,
+  Project,
+  ProjectDetail,
+  ProjectInput,
+  RewardInput,
+  SyncResult,
+  TimelineEvent,
+} from "./types";
 
 export class ApiError extends Error {
   constructor(
@@ -29,7 +40,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(`/api${path}`, {
       ...init,
-      headers: init?.body ? { "Content-Type": "application/json" } : undefined,
+      headers: init?.headers ?? (init?.body ? { "Content-Type": "application/json" } : undefined),
     });
   } catch {
     throw new ApiError("Can't reach the crowdtracker server. Check that it's running, then try again.", 0);
@@ -56,4 +67,18 @@ export const api = {
   updateReward: (id: number, changes: Partial<RewardInput>) =>
     request<ProjectDetail>(`/rewards/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
   deleteReward: (id: number) => request<ProjectDetail>(`/rewards/${id}`, { method: "DELETE" }),
+
+  listInbox: (status: InboxStatus | "all" = "unsorted") => request<InboxMessage[]>(`/inbox?status=${status}`),
+  mailStatus: () => request<MailStatus>("/inbox/status"),
+  syncMail: () => request<SyncResult>("/inbox/sync", { method: "POST" }),
+  uploadEmail: (file: Blob) =>
+    request<{ outcome: string; message: InboxMessage }>("/inbox/upload", {
+      method: "POST",
+      body: file,
+      headers: { "Content-Type": "message/rfc822" },
+    }),
+  assignMessage: (id: number, projectId: number) =>
+    request<InboxMessage>(`/inbox/${id}/assign`, { method: "POST", body: JSON.stringify({ project_id: projectId }) }),
+  ignoreMessage: (id: number) => request<InboxMessage>(`/inbox/${id}/ignore`, { method: "POST" }),
+  unsortMessage: (id: number) => request<InboxMessage>(`/inbox/${id}/unsort`, { method: "POST" }),
 };

@@ -19,6 +19,14 @@ services:
       # Loads this file the first time the database is empty. Put your own
       # JSON in the data volume; see backend/seed/projects.example.json.
       # CROWDTRACKER_SEED_FILE: /data/seed.json
+      #
+      # Email: read platform mail from one IMAP folder (see README "Email").
+      # CROWDTRACKER_IMAP_HOST: imap.gmail.com
+      # CROWDTRACKER_IMAP_USER: you@gmail.com
+      # CROWDTRACKER_IMAP_FOLDER: crowdfunding        # ADJUST: your Gmail label
+      # CROWDTRACKER_IMAP_PASSWORD_FILE: /run/secrets/crowdtracker_imap
+    # secrets:
+    #   - crowdtracker_imap
     volumes:
       # Named volume: ownership works with rootless Podman without extra flags.
       # For a bind mount use ./data:/data:U instead.
@@ -36,6 +44,12 @@ services:
 
 volumes:
   crowdtracker-data:
+
+# For the app password, create the secret once with:
+#   printf '%s' 'abcd efgh ijkl mnop' | podman secret create crowdtracker_imap -
+# secrets:
+#   crowdtracker_imap:
+#     external: true
 
 networks:
   traefik:

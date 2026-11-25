@@ -60,6 +60,7 @@ export interface ProjectInput {
   stage: Stage;
   received_on: string | null;
   notes: string | null;
+  match_terms: string | null;
 }
 
 export interface Project extends ProjectInput {
@@ -104,4 +105,46 @@ export interface EventInput {
   title: string;
   body: string | null;
   url: string | null;
+}
+
+export type InboxStatus = "matched" | "unsorted" | "ignored";
+
+export interface InboxMessage {
+  id: number;
+  received_at: string;
+  sender: string;
+  subject: string;
+  platform: Platform;
+  kind: EventKind;
+  stage_hint: Stage | null;
+  url: string | null;
+  tracking_url: string | null;
+  campaign_url: string | null;
+  excerpt: string | null;
+  status: InboxStatus;
+  match_reason: string | null;
+  project_id: number | null;
+  project_name: string | null;
+  event_id: number | null;
+}
+
+export interface MailStatus {
+  configured: boolean;
+  host: string | null;
+  folder: string | null;
+  interval_minutes: number | null;
+  unsorted: number;
+  total: number;
+  last_sync_at: string | null;
+  last_error: string | null;
+}
+
+export interface SyncResult {
+  ok: boolean;
+  fetched: number;
+  matched: number;
+  unsorted: number;
+  skipped: number;
+  duplicate: number;
+  error: string | null;
 }

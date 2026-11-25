@@ -9,6 +9,10 @@ const PATHS = {
   sortDown: "M7 10l5 5 5-5",
   alert: "M12 4l9 16H3L12 4zM12 10v5M12 17.5v.5",
   check: "M5 12.5l4.5 4.5L19 7.5",
+  mail: "M4 6h16v12H4zM4 7l8 6 8-6",
+  inbox: "M4 13l2.5-8h11L20 13v6H4zM4 13h5l1 2h4l1-2h5",
+  refresh: "M19 8a8 8 0 1 0 1 6M19 4v4h-4",
+  upload: "M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14",
 } as const;
 
 export type IconName = keyof typeof PATHS;

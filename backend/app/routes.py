@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import os
-from datetime import date, datetime
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from . import __version__
+from . import __version__, clock
 from .db import get_session
 from .models import (
     ACTION_STAGES,
@@ -18,6 +16,7 @@ from .models import (
     REWARD_KINDS,
     STAGES,
     Event,
+    InboxMessage,
     Project,
     Reward,
 )
@@ -30,7 +29,6 @@ from .schemas import (
     ProjectOut,
     ProjectUpdate,
     RewardCreate,
-    RewardOut,
     RewardUpdate,
     Summary,
 )
@@ -45,14 +43,7 @@ _LOAD = (selectinload(Project.events), selectinload(Project.rewards))
 
 
 def _today() -> date:
-    """Today in CROWDTRACKER_TZ (falls back to TZ, then the server's local date)."""
-    name = os.environ.get("CROWDTRACKER_TZ") or os.environ.get("TZ")
-    if name:
-        try:
-            return datetime.now(ZoneInfo(name)).date()
-        except (ZoneInfoNotFoundError, ValueError):
-            pass
-    return date.today()
+    return clock.today()
 
 
 def _derived(project: Project, today: date) -> dict:
@@ -180,6 +171,7 @@ def summary(session: Session = Depends(get_session)) -> Summary:
         partial=sum(1 for p in projects if p.stage == "partial"),
         delivered=sum(1 for p in projects if p.stage == "delivered"),
         cancelled=sum(1 for p in projects if p.stage == "cancelled"),
+        unsorted=session.query(InboxMessage).filter(InboxMessage.status == "unsorted").count(),
     )
 
 
@@ -271,6 +263,9 @@ def update_project(
 
 @router.delete("/projects/{project_id}", status_code=204)
 def delete_project(project_id: int, session: Session = Depends(get_session)) -> Response:
+    # Its emails go back to the tray rather than pointing at nothing.
+    for msg in session.scalars(select(InboxMessage).where(InboxMessage.project_id == project_id)):
+        msg.status, msg.project_id, msg.event_id, msg.match_reason = "unsorted", None, None, None
     session.delete(_get(session, project_id))
     session.commit()
     return Response(status_code=204)
