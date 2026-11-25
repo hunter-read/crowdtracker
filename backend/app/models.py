@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
-PLATFORMS = ["kickstarter", "backerkit", "gamefound", "pledgemanager", "indiegogo", "other"]
+PLATFORMS = ["kickstarter", "backerkit", "gamefound", "pledgemanager", "pledgebox", "indiegogo", "other"]
 
 # Ordered: a project normally moves left to right.
 STAGES = [

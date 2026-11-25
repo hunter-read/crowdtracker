@@ -14,7 +14,7 @@ FastAPI + SQLite backend, React front end, one container.
 ## What v1 does
 
 - Tracks each pledge's funding platform and pledge manager separately
-  (Kickstarter, BackerKit, Gamefound, PledgeManager, Indiegogo, other).
+  (Kickstarter, BackerKit, Gamefound, PledgeManager, PledgeBox, Indiegogo, other).
 - Keeps the **promised** date and the **latest estimate** apart, so slips are
   measured instead of overwritten.
 - Records when the campaign ended, so each pledge's timeline starts there.

@@ -66,8 +66,8 @@
 
 /*
   Platform colours. Kickstarter, BackerKit and Indiegogo are the brands' published
-  primaries (Indiegogo deepened slightly so white text passes contrast). Gamefound
-  and PledgeManager publish no hex values, so those two are stand-ins: change them here.
+  primaries (Indiegogo deepened slightly so white text passes contrast). Gamefound,
+  PledgeManager and PledgeBox publish no hex values, so those three are stand-ins: change them here.
 */
 .platform-kickstarter {
   --p-bg: #05ce78;
@@ -88,6 +88,11 @@
   --p-bg: #1565c0;
   --p-fg: #ffffff;
   --p-edge: #0f4f99;
+}
+.platform-pledgebox {
+  --p-bg: #0b7476;
+  --p-fg: #ffffff;
+  --p-edge: #08595b;
 }
 .platform-indiegogo {
   --p-bg: #d6106b;

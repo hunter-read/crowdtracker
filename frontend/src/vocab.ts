@@ -5,6 +5,7 @@ export const PLATFORMS: Platform[] = [
   "backerkit",
   "gamefound",
   "pledgemanager",
+  "pledgebox",
   "indiegogo",
   "other",
 ];
@@ -14,6 +15,7 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
   backerkit: "BackerKit",
   gamefound: "Gamefound",
   pledgemanager: "PledgeManager",
+  pledgebox: "PledgeBox",
   indiegogo: "Indiegogo",
   other: "Other",
 };

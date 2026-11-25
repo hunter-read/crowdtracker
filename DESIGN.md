@@ -28,8 +28,8 @@ All in `frontend/src/styles.css`.
   dark values (`prefers-color-scheme`).
 - Platform colours live in the `.platform-*` classes. Kickstarter `#05CE78`,
   BackerKit `#FFD508` and Indiegogo (`#EB1478`, deepened to `#D6106B` so white
-  text passes contrast) come from published brand values. **Gamefound and
-  PledgeManager are stand-ins**: neither publishes a hex value I could find.
+  text passes contrast) come from published brand values. **Gamefound,
+  PledgeManager and PledgeBox are stand-ins**: none publishes a hex value I could find.
 
 ## Rules this UI follows
 

@@ -3,6 +3,7 @@ export type Platform =
   | "backerkit"
   | "gamefound"
   | "pledgemanager"
+  | "pledgebox"
   | "indiegogo"
   | "other";
 
