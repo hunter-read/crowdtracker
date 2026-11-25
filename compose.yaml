@@ -13,10 +13,12 @@ services:
     #   dockerfile: Containerfile
     container_name: crowdtracker
     restart: unless-stopped
-    # environment:
-    #   # Loads this file the first time the database is empty. Put your own
-    #   # JSON in the data volume; see backend/seed/projects.example.json.
-    #   CROWDTRACKER_SEED_FILE: /data/seed.json
+    environment:
+      # Dates (received, auto-logged events) use this time zone. ADJUST.
+      CROWDTRACKER_TZ: America/Los_Angeles
+      # Loads this file the first time the database is empty. Put your own
+      # JSON in the data volume; see backend/seed/projects.example.json.
+      # CROWDTRACKER_SEED_FILE: /data/seed.json
     volumes:
       # Named volume: ownership works with rootless Podman without extra flags.
       # For a bind mount use ./data:/data:U instead.

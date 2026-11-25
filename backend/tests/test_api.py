@@ -364,3 +364,15 @@ def test_cancelled_ignores_rewards(client):
     rid = add_reward(client, p["id"], name="Refund?")["rewards"][0]["id"]
     body = client.patch(f"/api/rewards/{rid}", json={"received_on": "2026-01-01"}).json()
     assert body["stage"] == "cancelled"
+
+
+def test_today_uses_configured_time_zone(monkeypatch):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app import routes
+
+    monkeypatch.setenv("CROWDTRACKER_TZ", "Pacific/Kiritimati")  # UTC+14
+    assert routes._today() == datetime.now(ZoneInfo("Pacific/Kiritimati")).date()
+    monkeypatch.setenv("CROWDTRACKER_TZ", "Not/AZone")
+    assert routes._today()  # bad names fall back instead of crashing

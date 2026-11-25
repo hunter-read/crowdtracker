@@ -86,6 +86,7 @@ The container runs as a non-root user (UID 10001) and writes only to `/data`.
 | `CROWDTRACKER_DB`        | `/data/crowdtracker.db` | SQLite file                                          |
 | `CROWDTRACKER_SEED_FILE` | unset                   | JSON file to load at startup if the database is empty |
 | `CROWDTRACKER_STATIC`    | `/app/static`           | Built front end to serve                             |
+| `CROWDTRACKER_TZ`        | `TZ`, else UTC          | IANA time zone for "today" (e.g. `America/Los_Angeles`) |
 
 Back up by copying the SQLite file (`sqlite3 crowdtracker.db ".backup out.db"`
 while running).

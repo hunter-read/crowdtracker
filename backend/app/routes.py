@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
+import os
+from datetime import date, datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
@@ -43,6 +45,13 @@ _LOAD = (selectinload(Project.events), selectinload(Project.rewards))
 
 
 def _today() -> date:
+    """Today in CROWDTRACKER_TZ (falls back to TZ, then the server's local date)."""
+    name = os.environ.get("CROWDTRACKER_TZ") or os.environ.get("TZ")
+    if name:
+        try:
+            return datetime.now(ZoneInfo(name)).date()
+        except (ZoneInfoNotFoundError, ValueError):
+            pass
     return date.today()
 
 
@@ -138,7 +147,7 @@ def _new_project(payload: ProjectCreate) -> Project:
             elif project.stage in _PRE_DELIVERY:
                 project.stage = "partial"
     if project.stage == "delivered" and project.received_on is None:
-        project.received_on = date.today()
+        project.received_on = _today()
     return project
 
 
